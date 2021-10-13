@@ -1,0 +1,224 @@
+﻿@model DataAccessLayer.Models.TimeSheet
+@{ 
+    ViewBag.Title = "CreateEntry";
+}
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+
+
+
+
+<style>
+    fieldset {
+        border: 1px solid #ddd !important;
+        margin: 0;
+        margin-top: 15px;
+        min-width: 0;
+        padding: 10px;
+        position: relative;
+        border-radius: 4px;
+        background-color: #f5f5f5;
+        padding-left: 10px !important;
+    }
+
+    legend {
+        font-size: 14px;
+        font-weight: bold;
+        margin-bottom: 0px;
+        border: 1px solid #ddd;
+        width: 35%;
+        border-radius: 4px;
+        padding: 5px 5px 5px 10px;
+        background-color: #ffffff;
+    }
+
+    table, th, td {
+        border: 1px solid black;
+        text-align: center;
+    }
+</style>
+
+<form method="post" asp-action="Index" asp-controller="TimeSheet">
+    <fieldset>
+        
+        <input hidden asp-for="EmployeeId" value="@ViewBag.User.Id" />
+        <legend>
+            Select the Date
+        </legend>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group" style="font-size:larger">
+                        <label for="Date">Select a Date:</label>
+                        <input class="form-control" type="date" data-val="true" data-val-required="Date is Required" id="date" name="date" />
+                    </div>
+                    <span class="val" asp-validation-for="Date"></span>
+                </div>
+                <div class="col-md-6">
+                    <button class="btn btn-info" style="float:right" asp-action="Index" asp-controller="DashBoard" asp-route-id="@ViewBag.User.Id">Dashboard</button>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        <legend>
+            Time In And Out
+        </legend>
+        <div class="container" style="font-size:larger">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="TimeIn">Time In:</label>
+                        <input type="time" asp-for="TimeIn" id="TimeIn" name="TimeIn">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="TimeOut">Time Out:</label>
+                        <input type="time" asp-for="TimeOut" id="TimeOut" name="TimeOut">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group">
+                        <label for="TimeIn">Description:</label>
+                        <br>
+                        <textarea rows="2" cols="60" name="comment" id="description" form="usrform" placeholder="comments.."></textarea>
+                    </div>
+                </div>
+                <div class="col-md-4" style="margin-top:60px">
+                    <div class="form-group">
+                        <input style="text-align: right; margin-left:10px" type="button" value="Reset" name="Reset" id="btnReset" class="btn btn-warning" onclick="ResetTime()" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    </fieldset>
+
+    <fieldset>
+        
+        <legend>
+            Break In And Out
+        </legend>
+        <table id="BreakTable" class="table table-borderless table-sm" style="border:none">
+            <thead>
+                <tr>
+                    <th>
+                        BreakIn
+                    </th>
+                    <th>
+                        BreakOut
+                    </th>
+                    <th>
+                        
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < Model.BreakList.Count; i++)
+                {
+                    <tr>
+                        <td class="w-25" id="breakIn">
+                            @Html.EditorFor(model => model.BreakList[i].BreakIn, new { htmlAttributes = new {@class = "form-control" } })
+                        </td>
+                        <td class="w-25" id="breakOut">
+                            @Html.EditorFor(model => model.BreakList[i].BreakOut, new { htmlAttributes = new {@class = "form-control" } })
+                        </td>
+                        <td>
+                            <select name="breaktime" id="breaktime">
+                                <option value="Teabreak">Tea Break</option>
+                                <option value="Lunchbreak">Lunch Break</option>
+                            </select>
+                        </td>
+                        <td>
+                            <button style="border:none;margin-left:50px" id="btnremove_@i" type="button" class="btn btn-danger invisible"><i class="fa fa-trash" onclick="DeleteItem(this)"></i></button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="row">
+            <div class="col-md-4" style="margin-top:10px">
+                <div class="form-group">
+                    <input hidden id="hasLastIndex" value="0" />
+                    <input style="text-align: right" type="button" value="Start" name="Start" id="btnStart" class="btn btn-primary" onclick="startTime()" />
+                    <input style="text-align: right; margin-left:10px" type="button" value="Stop" name="Reset" id="btnReset" class="btn btn-danger" onclick="stopTime()" />
+                    <input style="text-align: right; margin-left: 10px" type="button" value="Add" name="Add" id="btnAddToList" class="btn btn-success" onclick="AddToBreakList()" />
+                </div>
+            </div>
+        </div>
+    </fieldset>
+    <button class="btn btn-success btn-ld" type="submit" style="margin:10px;float:right; margin-bottom:10px" onclick="Alert()">Save</button>
+</form>
+
+
+<script type="text/javascript">
+    function DeleteItem(btn) {
+        $(btn).closest('tr').remove();
+    }
+    function Alert() {
+        alert("Click DashBoard after saving");
+    }
+    function ResetTime() {
+        $("#TimeIn").val('');
+        $("#TimeOut").val('');
+        $("#description").val('');
+    }
+
+    function startTime() {
+        let today = new Date();
+        if (today.getHours() < 10) {
+            var time = "0" + today.getHours() + ":" + today.getMinutes()
+        }
+        else {
+            var time = today.getHours() + ":" + today.getMinutes()
+        }
+        document.getElementById(`BreakList_${index}__BreakIn`).value = time;
+    }
+
+    function stopTime() {
+        var today = new Date();
+        if (today.getHours() < 10) {
+            var time = "0" + today.getHours() + ":" + today.getMinutes()
+        }
+        else {
+            var time = today.getHours() + ":" + today.getMinutes()
+        }
+        document.getElementById(`BreakList_${index}__BreakOut`).value = time;
+    }
+
+    var index = 0;
+    function AddToBreakList() {
+        var table = document.getElementById('BreakTable');
+        var rows = table.getElementsByTagName('tr');
+
+        var rowOuterHtml = rows[rows.length - 1].outerHTML;
+
+        var lastrowIdx = document.getElementById('hasLastIndex').value;
+
+        var nextrowIdx = eval(lastrowIdx) + 1;
+
+        document.getElementById('hasLastIndex').value = nextrowIdx;
+
+        index = nextrowIdx;
+
+        rowOuterHtml = rowOuterHtml.replaceAll('_' + lastrowIdx + '_', '_' + nextrowIdx + '_');
+        rowOuterHtml = rowOuterHtml.replaceAll('[' + lastrowIdx + ']', '[' + nextrowIdx + ']');
+        rowOuterHtml = rowOuterHtml.replaceAll('_' + lastrowIdx, '_' + nextrowIdx);
+        
+
+        var newRow = table.insertRow();
+        newRow.innerHTML = rowOuterHtml;
+
+       
+
+        var delbtn = document.getElementById(`btnremove_${lastrowIdx}`);
+        delbtn.classList.add('visible');
+        delbtn.classList.remove('invisible');
+    }
+
+    function RemoveBreakList(remove) {
+        $(remove).closest('tr').remove();
+    }    
+</script>
